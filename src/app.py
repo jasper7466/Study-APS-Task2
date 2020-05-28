@@ -1,21 +1,21 @@
 from flask import Flask, request, render_template, make_response
+from flask.views import MethodView
 
 app = Flask(__name__)
 
 
-@app.route('/', methods = ['GET', "POST"])
-def index():
-    if request.method == 'GET':
-        response = make_response('Hello, world!')
-        response.headers['X-My-Header'] = 'test'
-        return response
-        # return 'Response!', 404
-    else:
+class IndexView(MethodView):
+    def get(self):
+        return 'Response!', 404
+
+    def post(self):
         return '\n'.join(
             f'{key}: {value}'
             for key, value in request.args.items()
         )
-        # return 'This is POST!'
+
+
+app.add_url_rule('/', view_func=IndexView.as_view('index'))
 
 
 @app.route('/user/<int:user_id>')
