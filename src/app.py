@@ -1,26 +1,32 @@
-from flask import Flask, request, render_template, make_response
+from flask import Flask, jsonify #, request, render_template, make_response
 from flask.views import MethodView
+from db import get_db, close_db
 
 app = Flask(__name__)
+app.teardown_appcontext(close_db)
 
 
-class IndexView(MethodView):
-    def get(self):
-        return 'Response!', 404
-
-    def post(self):
-        return '\n'.join(
-            f'{key}: {value}'
-            for key, value in request.args.items()
-        )
-
-
-app.add_url_rule('/', view_func=IndexView.as_view('index'))
+@app.route('/ads')
+def get_ads():
+    con = get_db()
+    cur = con.execute("""
+        SELECT *
+        FROM ad
+    """)
+    result = cur.fetchall()
+    return jsonify([dict(row) for row in result]), 200, {'Content-Type': 'application/json'}
 
 
-@app.route('/user/<int:user_id>')
-def getuser(user_id):
-    return {
-        'id': user_id,
-        'name': 'John'
-    }
+@app.route('/login', methods=['POST'])
+def login():
+    pass
+
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    pass
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    pass
