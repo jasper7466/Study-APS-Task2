@@ -1,8 +1,19 @@
 import sqlite3 as sqlite
-from flask import Flask, jsonify, request, session #, render_template, make_response
+from flask import (
+    Flask,
+    jsonify,
+    request,
+    session #, render_template, make_response
+)
 from flask.views import MethodView
-from db import get_db, close_db
-from hashlib import md5
+from werkzeug.security import (
+    generate_password_hash,
+    check_password_hash
+)
+from db import (
+    get_db,
+    close_db
+)
 
 app = Flask(__name__)
 app.teardown_appcontext(close_db)
@@ -54,8 +65,7 @@ def login():
     if account is None:
         return '', 403
 
-    password_hash = md5(user['password'].encode() + app.secret_key).hexdigest()
-    if account['password'] != password_hash:
+    if not check_password_hash(account['password'], user['password']):
         return '', 403
 
     session['account_id'] = account['id']
@@ -112,8 +122,7 @@ def register():     # TODO: доделать response, возвращать id �
             if request_json.get(record) is None:
                 return '', 400
 
-    password = request_json.get('password')     # TODO не работает со словарём
-    password_hash = md5(account['password'].encode() + app.secret_key).hexdigest()
+    password_hash = generate_password_hash(account['password'])
 
     # Работа с БД
     con = get_db()
