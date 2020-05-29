@@ -16,8 +16,8 @@ from db import (
 )
 
 app = Flask(__name__)
+app.config.from_object('config.Config')
 app.teardown_appcontext(close_db)
-app.secret_key = b'secret_key'
 
 
 @app.route('/ads')
