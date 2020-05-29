@@ -10,14 +10,11 @@ from werkzeug.security import (
     generate_password_hash,
     check_password_hash
 )
-from db import (
-    get_db,
-    close_db
-)
+from database import SqliteDB
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
-app.teardown_appcontext(close_db)
+db = SqliteDB(app)
 
 
 @app.route('/ads')
@@ -25,7 +22,7 @@ def get_ads():
     account_id = session.get('account_id')
     if account_id is None:
         return '', 403
-    con = get_db()
+    con = db.connection
     cur = con.execute(
         'SELECT * '
         'FROM ad '
@@ -53,7 +50,7 @@ def login():
     if not valid:
         return '', 400
 
-    con = get_db()
+    con = db.connection
     cur = con.execute(
         'SELECT * '
         'FROM account '
@@ -125,7 +122,7 @@ def register():     # TODO: доделать response, возвращать id �
     password_hash = generate_password_hash(account['password'])
 
     # Работа с БД
-    con = get_db()
+    con = db.connection
     cur = con.cursor()
 
     # Включение проверки ссылочной целостности
