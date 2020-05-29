@@ -1,7 +1,8 @@
+import sqlite3 as sqlite
 from flask import Flask, jsonify, request, session #, render_template, make_response
 from flask.views import MethodView
 from db import get_db, close_db
-import sqlite3 as sqlite
+from hashlib import md5
 
 app = Flask(__name__)
 app.teardown_appcontext(close_db)
@@ -53,7 +54,8 @@ def login():
     if account is None:
         return '', 403
 
-    if account['password'] != user['password']:
+    password_hash = md5(user['password'].encode() + app.secret_key).hexdigest()
+    if account['password'] != password_hash:
         return '', 403
 
     session['account_id'] = account['id']
@@ -110,6 +112,9 @@ def register():     # TODO: доделать response, возвращать id �
             if request_json.get(record) is None:
                 return '', 400
 
+    password = request_json.get('password')     # TODO не работает со словарём
+    password_hash = md5(account['password'].encode() + app.secret_key).hexdigest()
+
     # Работа с БД
     con = get_db()
     cur = con.cursor()
@@ -120,7 +125,7 @@ def register():     # TODO: доделать response, возвращать id �
         cur.execute(
             'INSERT INTO account (email, password, first_name, last_name) '
             'VALUES(?, ?, ?, ?) ',
-            (account['email'], account['password'], account['first_name'], account['last_name']),
+            (account['email'], password_hash, account['first_name'], account['last_name']),
         )
         if account['is_seller']:
             account_id = cur.lastrowid
