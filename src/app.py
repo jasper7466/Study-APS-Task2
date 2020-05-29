@@ -1,19 +1,25 @@
-from flask import Flask, jsonify, request #, render_template, make_response
+from flask import Flask, jsonify, request, session #, render_template, make_response
 from flask.views import MethodView
 from db import get_db, close_db
 import sqlite3 as sqlite
 
 app = Flask(__name__)
 app.teardown_appcontext(close_db)
+app.secret_key = b'secret_key'
 
 
 @app.route('/ads')
 def get_ads():
+    account_id = session.get('account_id')
+    if account_id is None:
+        return '', 403
     con = get_db()
-    cur = con.execute("""
-        SELECT *
-        FROM ad
-    """)
+    cur = con.execute(
+        'SELECT * '
+        'FROM ad '
+        'WHERE seller_id = ?',
+        (account_id,),
+    )
     result = cur.fetchall()
     return jsonify([dict(row) for row in result]), 200, {'Content-Type': 'application/json'}
 
@@ -21,18 +27,49 @@ def get_ads():
 # Авторизация
 @app.route('/auth/login', methods=['POST'])
 def login():
-    pass
+    valid = True
+
+    request_json = request.json
+    user = {
+        'email': None,
+        'password': None
+    }
+    for key in user:
+        user[key] = request_json.get(key)
+        if user[key] is None:
+            valid = False
+    if not valid:
+        return '', 400
+
+    con = get_db()
+    cur = con.execute(
+        'SELECT * '
+        'FROM account '
+        'WHERE email = ?',
+        (user['email'],),
+    )
+    account = cur.fetchone()
+
+    if account is None:
+        return '', 403
+
+    if account['password'] != user['password']:
+        return '', 403
+
+    session['account_id'] = account['id']
+    return '', 200
 
 
 # Выход
 @app.route('/auth/logout', methods=['POST'])
 def logout():
-    pass
+    session.pop('account_id', None)
+    return '', 200
 
 
 # Регистрация
 @app.route('/users', methods=['POST'])
-def register():
+def register():     # TODO: доделать response, возвращать id пользователя
     # Получение данных запроса
     request_json = request.json
 
