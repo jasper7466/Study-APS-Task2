@@ -6,6 +6,7 @@ from flask import (
 )
 from flask.views import MethodView
 from database import db
+from auth import auth_required
 
 
 bp = Blueprint('ads', __name__)
@@ -21,13 +22,11 @@ class AdsView(MethodView):
         result = cur.fetchall()
         return jsonify([dict(row) for row in result]), 200, {'Content-Type': 'application/json'}
 
-    def post(self):
-        seller_id = session.get('account_id')  # TODO заменить на seller_id
+    @auth_required      # TODO заменить на seller_required
+    def post(self, user):
+        seller_id = user['id']
         date = 'test'                          # TODO убрать заглушки
         car_id = 'test'
-
-        if seller_id is None:
-            return '', 403
 
         request_json = request.json
         title = request_json.get('title')

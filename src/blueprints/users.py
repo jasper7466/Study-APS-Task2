@@ -7,6 +7,7 @@ from flask import (
 from flask.views import MethodView
 from werkzeug.security import generate_password_hash
 from database import db
+from auth import auth_required
 
 
 bp = Blueprint('users', __name__)
@@ -88,34 +89,39 @@ class UsersRegisterView(MethodView):
 # Взаимодействие (просмотр или частичное редактирование)
 class UsersInteractView(MethodView):
     # Получение пользователя
-    def get(self, user_id):
-        con = db.connection
-        cur = con.execute(
-            'SELECT id, first_name, last_name '
-            'FROM account '
-            'WHERE id = ?',
-            (user_id,),
-        )
-        user = cur.fetchone()
-        if user is None:
-            return ', 404'
+    @auth_required
+    def get(self, user_id, account):
+        with db.connection as con:
+            cur = con.execute(
+                'SELECT id, first_name, last_name '
+                'FROM account '
+                'WHERE id = ?',
+                (user_id,),
+            )
+            user = cur.fetchone()
+            if user is None:
+                return '', 404
         return jsonify(dict(user))
 
     # Частичное редактирование пользователя
-    def patch(self, user_id):
+    @auth_required
+    def patch(self, user_id, account):
+        if user_id != account['id']:
+            return '', 403
+
         request_json = request.json
         first_name = request_json.get('first_name')
         if not first_name:
             return '', 400
 
-        con = db.connection     # TODO проверка существования пользователь или try/except
-        con.execute(
-            'UPDATE account '
-            'SET first_name = ? '
-            'WHERE id = ?',
-            (first_name, user_id),
-        )
-        con.commit()
+        with db.connection as con:
+            con.execute(
+                'UPDATE account '
+                'SET first_name = ? '
+                'WHERE id = ?',
+                (first_name, user_id),
+            )
+            con.commit()
         return '', 200
 
 
