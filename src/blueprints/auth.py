@@ -10,7 +10,7 @@ bp = Blueprint('auth', __name__)
 
 
 # Авторизация
-@bp.route('/auth/login', methods=['POST'])
+@bp.route('/login', methods=['POST'])
 def login():
     valid = True
 
@@ -46,7 +46,7 @@ def login():
 
 
 # Выход
-@bp.route('/auth/logout', methods=['POST'])
+@bp.route('/logout', methods=['POST'])
 def logout():
     session.pop('account_id', None)
     return '', 200
