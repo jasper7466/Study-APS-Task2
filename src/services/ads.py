@@ -1,12 +1,12 @@
-# from exceptions import ServiceError
-#
-#
-# class AdsServiceError(ServiceError):
-#     service = 'ads'
-#
-#
-# class AdDoesNotExistError(AdsServiceError):
-#     pass
+from exceptions import ServiceError
+
+
+class AdsServiceError(ServiceError):
+    service = 'ads'
+
+
+class AdDoesNotExistError(AdsServiceError):
+    pass
 
 
 class AdsService:

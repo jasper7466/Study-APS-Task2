@@ -6,7 +6,10 @@ from flask import (
 from flask.views import MethodView
 from database import db
 from auth import auth_required
-from services.ads import AdsService
+from services.ads import (
+    AdsService,
+    AdDoesNotExistError
+)
 
 
 bp = Blueprint('ads', __name__)
@@ -51,17 +54,14 @@ class AdsView(MethodView):
 
 class AdView(MethodView):
     def get(self, ad_id):
-        con = db.connection
-        cur = con.execute(
-            'SELECT * '
-            'FROM ad '
-            'WHERE id = ?',
-            (ad_id,),
-        )
-        ad = cur.fetchone()
-        if ad is None:
-            return '', 404
-        return jsonify(dict(ad))
+        with db.connection as con:
+            service = AdsService(con)
+            try:
+                ad = service.get_ad(ad_id)
+            except AdDoesNotExistError:
+                return '', 404
+            else:
+                return jsonify(dict(ad))
 
 
 bp.add_url_rule('', view_func=AdsView.as_view('ads'))
