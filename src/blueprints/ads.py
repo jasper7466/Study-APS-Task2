@@ -1,4 +1,8 @@
-from flask import Blueprint, session, jsonify
+from flask import (
+    Blueprint,
+    session,
+    jsonify
+)
 
 from database import db
 
