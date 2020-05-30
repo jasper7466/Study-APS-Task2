@@ -23,7 +23,7 @@ class AdsView(MethodView):
 
     def post(self):
         seller_id = session.get('account_id')  # TODO заменить на seller_id
-        date = 'test'
+        date = 'test'                          # TODO убрать заглушки
         car_id = 'test'
 
         if seller_id is None:
@@ -53,9 +53,23 @@ class AdsView(MethodView):
         return jsonify(dict(ad)), 201
 
 
+class AdView(MethodView):
+    def get(self, ad_id):
+        con = db.connection
+        cur = con.execute(
+            'SELECT * '
+            'FROM ad '
+            'WHERE id = ?',
+            (ad_id,),
+        )
+        ad = cur.fetchone()
+        if ad is None:
+            return '', 404
+        return jsonify(dict(ad))
 
 
 bp.add_url_rule('', view_func=AdsView.as_view('ads'))
+bp.add_url_rule('/<int:ad_id>', view_func=AdView.as_view('ad'))
 
 # @bp.route('/ads')
 # def get_ads():
