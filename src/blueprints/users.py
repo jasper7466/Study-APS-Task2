@@ -12,8 +12,8 @@ from database import db
 bp = Blueprint('users', __name__)
 
 
-class UsersView(MethodView):
-    # Регистрация
+# Регистрация
+class UsersRegisterView(MethodView):
     def post(self):
         # Получение данных запроса
         request_json = request.json
@@ -85,7 +85,8 @@ class UsersView(MethodView):
         # return jsonify([dict(row) for row in rows]) TODO
 
 
-class UserView(MethodView):
+# Взаимодействие (просмотр или частичное редактирование)
+class UsersInteractView(MethodView):
     # Получение пользователя
     def get(self, user_id):
         con = db.connection
@@ -100,6 +101,23 @@ class UserView(MethodView):
             return ', 404'
         return jsonify(dict(user))
 
+    # Частичное редактирование пользователя
+    def patch(self, user_id):
+        request_json = request.json
+        first_name = request_json.get('first_name')
+        if not first_name:
+            return '', 400
 
-bp.add_url_rule('', view_func=UsersView.as_view('users'))
-bp.add_url_rule('/<int:user_id>', view_func=UserView.as_view('user'))
+        con = db.connection     # TODO проверка существования пользователь или try/except
+        con.execute(
+            'UPDATE account '
+            'SET first_name = ? '
+            'WHERE id = ?',
+            (first_name, user_id),
+        )
+        con.commit()
+        return '', 200
+
+
+bp.add_url_rule('', view_func=UsersRegisterView.as_view('users'))
+bp.add_url_rule('/<int:user_id>', view_func=UsersInteractView.as_view('user'))
