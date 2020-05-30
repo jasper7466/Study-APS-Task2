@@ -1,12 +1,12 @@
 from flask import (
     Blueprint,
-    session,
     jsonify,
     request
 )
 from flask.views import MethodView
 from database import db
 from auth import auth_required
+from services.ads import AdsService
 
 
 bp = Blueprint('ads', __name__)
@@ -14,13 +14,10 @@ bp = Blueprint('ads', __name__)
 
 class AdsView(MethodView):
     def get(self):
-        con = db.connection
-        cur = con.execute(
-            'SELECT * '
-            'FROM ad '
-        )
-        result = cur.fetchall()
-        return jsonify([dict(row) for row in result]), 200, {'Content-Type': 'application/json'}
+        with db.connection as con:
+            service = AdsService(con)
+            ads = service.get_ads()
+        return jsonify(ads), 200, {'Content-Type': 'application/json'}
 
     @auth_required      # TODO заменить на seller_required
     def post(self, user):
