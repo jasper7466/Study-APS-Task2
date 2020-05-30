@@ -1,7 +1,8 @@
 import sqlite3 as sqlite
 from flask import (
     Blueprint,
-    request
+    request,
+    jsonify
 )
 from flask.views import MethodView
 from werkzeug.security import generate_password_hash
@@ -84,4 +85,21 @@ class UsersView(MethodView):
         # return jsonify([dict(row) for row in rows]) TODO
 
 
+class UserView(MethodView):
+    # Получение пользователя
+    def get(self, user_id):
+        con = db.connection
+        cur = con.execute(
+            'SELECT id, first_name, last_name '
+            'FROM account '
+            'WHERE id = ?',
+            (user_id,),
+        )
+        user = cur.fetchone()
+        if user is None:
+            return ', 404'
+        return jsonify(dict(user))
+
+
 bp.add_url_rule('', view_func=UsersView.as_view('users'))
+bp.add_url_rule('/<int:user_id>', view_func=UserView.as_view('user'))
