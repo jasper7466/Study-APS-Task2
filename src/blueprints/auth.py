@@ -35,7 +35,7 @@ def login():
                 pass
             else:
                 session['seller_id'] = seller_id
-            return '', 200
+            return '', 200      # TODO response
 
 
 # Выход

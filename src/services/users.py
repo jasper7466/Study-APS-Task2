@@ -128,7 +128,7 @@ class UserService:
             raise UserUpdateFailedError()
         self.connection.commit()
 
-        # Получение данных пользователя для формимрвоания ответа
+        # Получение данных пользователя для формирования ответа
         cur = self.connection.execute(f'''
             SELECT id, email, first_name, last_name
             FROM account
@@ -138,7 +138,7 @@ class UserService:
         account = dict(account)
         account['is_seller'] = False
 
-        # Получение данных продавца для формимрвоания ответа
+        # Получение данных продавца для формирования ответа
         cur = self.connection.execute(f'''
             SELECT seller.phone, seller.zip_code, zipcode.city_id, seller.street, seller.home
             FROM seller

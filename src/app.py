@@ -15,7 +15,6 @@ def create_app():
     app.register_blueprint(users_bp, url_prefix='/users')
     app.register_blueprint(user_ads_bp, url_prefix='/users')
 
-
     db.init_app(app)
     return app
 

@@ -27,7 +27,7 @@ class AdsView(MethodView):
     @auth_required
     def post(self, user):
         seller_id = user['id']
-        date = 'test'                          # TODO убрать заглушки
+        date = 'test'                          # TODO убрать заглушки, доделать
         car_id = 'test'
 
         request_json = request.json
@@ -69,18 +69,3 @@ class AdView(MethodView):
 
 bp.add_url_rule('', view_func=AdsView.as_view('ads'))
 bp.add_url_rule('/<int:ad_id>', view_func=AdView.as_view('ad'))
-
-# @bp.route('/ads')
-# def get_ads():
-#     account_id = session.get('account_id')
-#     if account_id is None:
-#         return '', 403
-#     con = db.connection
-#     cur = con.execute(
-#         'SELECT * '
-#         'FROM ad '
-#         'WHERE seller_id = ?',
-#         (account_id,),
-#     )
-#     result = cur.fetchall()
-#     return jsonify([dict(row) for row in result]), 200, {'Content-Type': 'application/json'}

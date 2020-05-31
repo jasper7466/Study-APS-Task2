@@ -22,7 +22,7 @@ class AdsService:
         )
         params = ()
 
-        # Фильтрация через query string
+        # Фильтрация через query string     TODO доделать
         if filters:
             # Формируем набор условий для блока WHERE   TODO валидация условий
             conditions = ''
@@ -39,7 +39,7 @@ class AdsService:
                 WHERE {conditions}
             '''
 
-        # Запрос объявлений продавца по id его аккаунта
+        # Запрос объявлений продавца по id его аккаунта     TODO конфликт с фильтрацией
         if account_id is not None:
             query += f'''
                 WHERE seller_id =

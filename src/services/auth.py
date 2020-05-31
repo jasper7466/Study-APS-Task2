@@ -18,6 +18,7 @@ class AuthService:
     def __init__(self, connection):
         self.connection = connection
 
+    # Авторизация пользователя
     def login(self, email, password):
         query = (
             'SELECT id, password '
@@ -33,6 +34,7 @@ class AuthService:
             raise AuthorizationFailedError(email)
         return account['id']
 
+    # Получение пользователя
     def get_seller(self, account_id):
         query = (
             'SELECT id '
@@ -44,4 +46,4 @@ class AuthService:
         seller = cur.fetchone()
         if seller is None:
             raise SellerDoesNotExistError(account_id)
-        return seller['id']
+        return seller['id']         # TODO сформировать корректный response
