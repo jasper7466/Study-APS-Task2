@@ -11,6 +11,10 @@ class RegistrationFailedError(UsersServiceError):
     pass
 
 
+class UserDoesNotExistError(UsersServiceError):
+    pass
+
+
 class UserService:
     def __init__(self, connection):
         self.connection = connection
@@ -51,3 +55,31 @@ class UserService:
             del new_user['password']
             new_user['id'] = account_id
             return new_user
+
+    def get_user(self, account_id):
+        query_user = (
+            'SELECT id, email, first_name, last_name '
+            'FROM account '
+            'WHERE id = ?'
+        )
+        query_seller = (
+            'SELECT phone, zip_code, street, home, account_id '
+            'FROM seller '
+            'WHERE id = ?'
+        )
+        params = (account_id,)
+
+        cur = self.connection.execute(query_user, params)
+        account = cur.fetchone()
+        if account is None:
+            raise UserDoesNotExistError(account_id)
+        account = dict(account)
+        account['is_seller'] = False
+
+        cur = self.connection.execute(query_seller, params)
+        seller = cur.fetchone()
+        if seller is not None:
+            seller = dict(seller)
+            account['is_seller'] = True
+            account = {**account, **seller}
+        return account

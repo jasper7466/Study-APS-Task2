@@ -8,7 +8,8 @@ from database import db
 from auth import auth_required
 from services.users import (
     UserService,
-    RegistrationFailedError
+    RegistrationFailedError,
+    UserDoesNotExistError
 )
 
 bp = Blueprint('users', __name__)
@@ -34,18 +35,14 @@ class UsersRegisterView(MethodView):
 class UsersInteractView(MethodView):
     # Получение пользователя
     @auth_required
-    def get(self, user_id, account):
+    def get(self, user_id, account_id):
         with db.connection as con:
-            cur = con.execute(
-                'SELECT id, first_name, last_name '
-                'FROM account '
-                'WHERE id = ?',
-                (user_id,),
-            )
-            user = cur.fetchone()
-            if user is None:
+            service = UserService(con)
+            try:
+                user = service.get_user(user_id)
+            except UserDoesNotExistError:
                 return '', 404
-        return jsonify(dict(user))
+        return jsonify(dict(user)), 200, {'Content-Type': 'application/json'}
 
     # Частичное редактирование пользователя
     @auth_required

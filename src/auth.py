@@ -19,5 +19,5 @@ def auth_required(view_func):
             account = cur.fetchone()
         if not account:
             return '', 403
-        return view_func(*args, **kwargs, account=account)
+        return view_func(*args, **kwargs, account_id=account_id)
     return wrapper
