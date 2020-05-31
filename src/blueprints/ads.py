@@ -16,13 +16,15 @@ bp = Blueprint('ads', __name__)
 
 
 class AdsView(MethodView):
+    # Получение всех объявлений
     def get(self):
+        query_string = request.args
         with db.connection as con:
             service = AdsService(con)
-            ads = service.get_ads()
+            ads = service.get_ads(filters=query_string)
         return jsonify(ads), 200, {'Content-Type': 'application/json'}
 
-    @auth_required      # TODO заменить на seller_required
+    @auth_required
     def post(self, user):
         seller_id = user['id']
         date = 'test'                          # TODO убрать заглушки
@@ -53,6 +55,7 @@ class AdsView(MethodView):
 
 
 class AdView(MethodView):
+    # Получение объявления по его id
     def get(self, ad_id):
         with db.connection as con:
             service = AdsService(con)

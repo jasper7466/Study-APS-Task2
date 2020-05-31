@@ -11,6 +11,7 @@ bp = Blueprint('user_ads', __name__)
 
 
 class UserAdsView(MethodView):
+    # Получение объявлений пользователя
     def get(self, account_id):
         with db.connection as con:
             service = AdsService(con)
