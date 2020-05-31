@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash
 
 
 class UsersServiceError(ServiceError):
-    service = 'user'
+    service = 'users'
 
 
 class RegistrationFailedError(UsersServiceError):
@@ -15,10 +15,15 @@ class UserDoesNotExistError(UsersServiceError):
     pass
 
 
+class UserUpdateFailedError(UserDoesNotExistError):
+    pass
+
+
 class UserService:
     def __init__(self, connection):
         self.connection = connection
 
+    # Создание пользователя
     def create_user(self, new_user):
         password_hash = generate_password_hash(new_user['password'])
         query_user = (
@@ -56,6 +61,7 @@ class UserService:
             new_user['id'] = account_id
             return new_user
 
+    # Получение данных польователя
     def get_user(self, account_id):
         query_user = (
             'SELECT id, email, first_name, last_name '
@@ -65,7 +71,7 @@ class UserService:
         query_seller = (
             'SELECT phone, zip_code, street, home, account_id '
             'FROM seller '
-            'WHERE id = ?'
+            'WHERE account_id = ?'
         )
         params = (account_id,)
 
@@ -78,6 +84,70 @@ class UserService:
 
         cur = self.connection.execute(query_seller, params)
         seller = cur.fetchone()
+        if seller is not None:
+            seller = dict(seller)
+            account['is_seller'] = True
+            account = {**account, **seller}
+        return account
+
+    # Частичное редактирование пользователя
+    def edit_user(self, account_id, data):
+        user = ('first_name', 'last_name')
+        seller = ('zip_code', 'city_id', 'street', 'home')
+
+        self.connection.execute('PRAGMA foreign_keys = ON')
+
+        try:
+            # Редактирование пользователя
+            for key in user:
+                try:
+                    if data[key] is not None:
+                        self.connection.execute(f'UPDATE account SET {key} = "{data[key]}" WHERE id = {account_id}')
+                except KeyError:
+                    pass
+
+            # Редактирование продавца
+            if data['is_seller']:
+                for key in seller:
+                    try:
+                        if data[key] is not None:
+                            self.connection.execute(f'UPDATE seller SET {key} = "{data[key]}" WHERE account_id = {account_id}')
+                            print(data[key])
+                    except KeyError:
+                        pass
+
+            # Удаление объявлений и сущности продавца
+            if not data['is_seller']:
+                self.connection.execute(f'''
+                    DELETE FROM ad WHERE seller_id = 
+                        (SELECT id FROM seller WHERE id = "{account_id}")
+                ''')
+                self.connection.execute(f'DELETE FROM seller WHERE account_id = "{account_id}"')
+        except sqlite.IntegrityError:
+            self.connection.rollback()
+            raise UserUpdateFailedError()
+        self.connection.commit()
+
+        # Получение данных пользователя для формимрвоания ответа
+        cur = self.connection.execute(f'''
+            SELECT id, email, first_name, last_name
+            FROM account
+            WHERE id = "{account_id}"
+        ''')
+        account = cur.fetchone()
+        account = dict(account)
+        account['is_seller'] = False
+
+        # Получение данных продавца для формимрвоания ответа
+        cur = self.connection.execute(f'''
+            SELECT seller.phone, seller.zip_code, zipcode.city_id, seller.street, seller.home
+            FROM seller
+                JOIN zipcode ON zipcode.zip_code = seller.zip_code 
+            WHERE account_id = "{account_id}"
+        ''')
+        seller = cur.fetchone()
+
+        # Формирование ответа
         if seller is not None:
             seller = dict(seller)
             account['is_seller'] = True

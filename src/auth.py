@@ -11,7 +11,7 @@ def auth_required(view_func):
             return '', 403
         with db.connection as con:
             cur = con.execute(
-                'SELECT id, first_name '
+                'SELECT id '
                 'FROM account '
                 'WHERE id = ?',
                 (account_id,),
@@ -19,5 +19,5 @@ def auth_required(view_func):
             account = cur.fetchone()
         if not account:
             return '', 403
-        return view_func(*args, **kwargs, account_id=account_id)
+        return view_func(*args, **kwargs, account=account)
     return wrapper

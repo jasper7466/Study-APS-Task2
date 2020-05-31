@@ -9,7 +9,8 @@ from auth import auth_required
 from services.users import (
     UserService,
     RegistrationFailedError,
-    UserDoesNotExistError
+    UserDoesNotExistError,
+    UserUpdateFailedError
 )
 
 bp = Blueprint('users', __name__)
@@ -35,7 +36,7 @@ class UsersRegisterView(MethodView):
 class UsersInteractView(MethodView):
     # Получение пользователя
     @auth_required
-    def get(self, user_id, account_id):
+    def get(self, user_id, account):
         with db.connection as con:
             service = UserService(con)
             try:
@@ -51,19 +52,14 @@ class UsersInteractView(MethodView):
             return '', 403
 
         request_json = request.json
-        first_name = request_json.get('first_name')
-        if not first_name:
-            return '', 400
 
         with db.connection as con:
-            con.execute(
-                'UPDATE account '
-                'SET first_name = ? '
-                'WHERE id = ?',
-                (first_name, user_id),
-            )
-            con.commit()
-        return '', 200
+            service = UserService(con)
+            try:
+                user = service.edit_user(user_id, request_json)
+            except UserUpdateFailedError:
+                return '', 400
+        return jsonify(dict(user)), 200, {'Content-Type': 'application/json'}
 
 
 bp.add_url_rule('', view_func=UsersRegisterView.as_view('users'))
