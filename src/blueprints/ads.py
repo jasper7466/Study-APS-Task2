@@ -25,8 +25,8 @@ class AdsView(MethodView):
         return jsonify(ads), 200, {'Content-Type': 'application/json'}
 
     @auth_required
-    def post(self, user):
-        seller_id = user['id']
+    def post(self, account):
+        seller_id = account['id']
         date = 'test'                          # TODO убрать заглушки, доделать
         car_id = 'test'
 
