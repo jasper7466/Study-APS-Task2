@@ -5,6 +5,7 @@ from blueprints.auth import bp as auth_bp
 from blueprints.users import bp as users_bp
 from blueprints.user_ads import bp as user_ads_bp
 from blueprints.colors import bp as colors_bp
+from blueprints.cities import bp as cities_bp
 from database import db
 
 
@@ -16,6 +17,7 @@ def create_app():
     app.register_blueprint(users_bp, url_prefix='/users')
     app.register_blueprint(user_ads_bp, url_prefix='/users')
     app.register_blueprint(colors_bp, url_prefix='/colors')
+    app.register_blueprint(cities_bp, url_prefix='/cities')
 
     db.init_app(app)
     return app
