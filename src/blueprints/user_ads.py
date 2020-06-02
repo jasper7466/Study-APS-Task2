@@ -16,7 +16,7 @@ class UserAdsView(MethodView):
         with db.connection as con:
             service = AdsService(con)
             ads = service.get_ads(account_id=account_id)
-        return jsonify(ads) , 200, {'Content-Type': 'application/json'}
+        return jsonify(ads), 200, {'Content-Type': 'application/json'}
 
 
 bp.add_url_rule('/<int:account_id>/ads', view_func=UserAdsView.as_view('user_ads'))

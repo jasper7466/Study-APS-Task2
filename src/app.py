@@ -6,7 +6,9 @@ from blueprints.users import bp as users_bp
 from blueprints.user_ads import bp as user_ads_bp
 from blueprints.colors import bp as colors_bp
 from blueprints.cities import bp as cities_bp
+from blueprints.images import bp as images_bp
 from database import db
+from fileloader import fl
 
 
 def create_app():
@@ -18,7 +20,9 @@ def create_app():
     app.register_blueprint(user_ads_bp, url_prefix='/users')
     app.register_blueprint(colors_bp, url_prefix='/colors')
     app.register_blueprint(cities_bp, url_prefix='/cities')
+    app.register_blueprint(images_bp, url_prefix='/images')
 
     db.init_app(app)
-    return app
+    fl.init_app(app)
 
+    return app
