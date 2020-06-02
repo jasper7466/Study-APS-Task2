@@ -12,8 +12,13 @@ bp = Blueprint('user_ads', __name__)
 
 
 class UserAdsView(MethodView):
-    # Получение объявлений пользователя
     def get(self, account_id):
+        """
+        Обработчик GET-запроса на получение списка объявлений
+        с опциональными query string параметрами через id пользователя.
+        :param account_id:
+        :return:
+        """
         qs = dict(request.args)
         with db.connection as con:
             service = AdsService(con)

@@ -31,14 +31,14 @@ def seller_required(view_func):
         if not account_id or not seller_id:
             return '', 403
         with db.connection as con:
-            cur = con.execute(
-                'SELECT account.id, seller.id '
-                'FROM account, seller '
-                'WHERE account.id = ? AND seller.id = ?',
-                (account_id, seller_id),
-            )
+            cur = con.execute(f'''
+                SELECT account.id as account_id, seller.id as seller_id
+                FROM account
+                    JOIN seller ON seller.id = account.id
+                WHERE account.id = {account_id} AND seller.id = {seller_id}
+            ''')
             account = cur.fetchone()
         if not account:
             return '', 403
-        return view_func(*args, **kwargs, account=account)
+        return view_func(*args, **kwargs, account=dict(account))
     return wrapper

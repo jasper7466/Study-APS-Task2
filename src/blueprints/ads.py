@@ -5,11 +5,13 @@ from flask import (
 )
 from flask.views import MethodView
 from database import db
-from auth import auth_required
+from auth import seller_required
 from services.ads import (
     AdsService,
-    AdDoesNotExistError
+    AdDoesNotExistError,
+    AdPublishError
 )
+from datetime import datetime
 
 
 bp = Blueprint('ads', __name__)
@@ -18,7 +20,9 @@ bp = Blueprint('ads', __name__)
 class AdsView(MethodView):
     def get(self):
         """
-        Обработчик запроса на получение всех объявлений.
+        Обработчик GET-запроса на получение списка объявлений
+        с опциональными query string параметрами.
+        :return: response
         """
         qs = dict(request.args)
         with db.connection as con:
@@ -26,38 +30,37 @@ class AdsView(MethodView):
             ads = service.get_ads(qs=qs)
         return jsonify(ads), 200, {'Content-Type': 'application/json'}
 
-    @auth_required
+    @seller_required
     def post(self, account):
-        seller_id = account['id']
-        date = 'test'                          # TODO убрать заглушки, доделать
-        car_id = 'test'
-
+        """
+        Обработчик POST-запрса на создание объявления.
+        :param account: параметры авторизации
+        :return:
+        """
+        seller_id = account['seller_id']
         request_json = request.json
-        title = request_json.get('title')
-
-        if not title:
+        if not request_json:
             return '', 400
 
-        con = db.connection
-        cur = con.execute(
-            'INSERT INTO ad (title, date, seller_id, car_id) '
-            'VALUES (?, ?, ?, ?)',
-            (title, date, seller_id, car_id),
-        )
-        con.commit()
-        ad_id = cur.lastrowid
-        cur = con.execute(
-            'SELECT * '
-            'FROM ad '
-            'WHERE id = ?',
-            (ad_id,),
-        )
-        ad = cur.fetchone()
-        return jsonify(dict(ad)), 201
+        # Добавляем в запрос метку времени и id продавца
+        request_json.update({'date': int(datetime.now().timestamp())})
+        request_json.update({'seller_id': seller_id})
+        # Добавляем в кол-во владельцев (если не задано) TODO
+        if not request_json.get('num_owners'):
+            request_json.update({'num_owners': 0})
+
+        with db.connection as con:
+            service = AdsService(con)
+            try:
+                ad = service.publish(request_json)
+            except AdPublishError:
+                con.rollback()
+                return '', 409
+            else:
+                return jsonify(dict(ad)), 201
 
 
 class AdView(MethodView):
-
     def get(self, ad_id):
         """
         Обработчик запроса на получение объявления по его id
