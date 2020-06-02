@@ -16,12 +16,14 @@ bp = Blueprint('ads', __name__)
 
 
 class AdsView(MethodView):
-    # Получение всех объявлений
     def get(self):
-        query_string = request.args
+        """
+        Обработчик запроса на получение всех объявлений.
+        """
+        qs = dict(request.args)
         with db.connection as con:
             service = AdsService(con)
-            ads = service.get_ads(filters=query_string)
+            ads = service.get_ads(qs=qs)
         return jsonify(ads), 200, {'Content-Type': 'application/json'}
 
     @auth_required
@@ -55,8 +57,12 @@ class AdsView(MethodView):
 
 
 class AdView(MethodView):
-    # Получение объявления по его id
+
     def get(self, ad_id):
+        """
+        Обработчик запроса на получение объявления по его id
+        :param ad_id: id объявления
+        """
         with db.connection as con:
             service = AdsService(con)
             try:

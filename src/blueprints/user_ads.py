@@ -1,6 +1,7 @@
 from flask import (
     Blueprint,
-    jsonify
+    jsonify,
+    request
 )
 from flask.views import MethodView
 from database import db
@@ -13,9 +14,10 @@ bp = Blueprint('user_ads', __name__)
 class UserAdsView(MethodView):
     # Получение объявлений пользователя
     def get(self, account_id):
+        qs = dict(request.args)
         with db.connection as con:
             service = AdsService(con)
-            ads = service.get_ads(account_id=account_id)
+            ads = service.get_ads(account_id=account_id, qs=qs)
         return jsonify(ads), 200, {'Content-Type': 'application/json'}
 
 
