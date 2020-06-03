@@ -23,8 +23,12 @@ class UserService:
     def __init__(self, connection):
         self.connection = connection
 
-    # Создание пользователя
     def create_user(self, new_user):
+        """
+        Метод создания пользователя
+        :param new_user: параметры нового пользователя
+        :return: новый пользователь
+        """
         password_hash = generate_password_hash(new_user['password'])
         query_user = (
             'INSERT INTO account (email, password, first_name, last_name) '
@@ -61,8 +65,12 @@ class UserService:
             new_user['id'] = account_id
             return new_user
 
-    # Получение данных польователя
     def get_user(self, account_id):
+        """
+        Метод получения данных пользователя.
+        :param account_id: идентификатор пользователя
+        :return: данные пользователя
+        """
         query_user = (
             'SELECT id, email, first_name, last_name '
             'FROM account '
@@ -90,8 +98,13 @@ class UserService:
             account = {**account, **seller}
         return account
 
-    # Частичное редактирование пользователя
     def edit_user(self, account_id, data):
+        """
+        Метод частичного редактирования пользователя
+        :param account_id: идентификатор пользователя
+        :param data: обновляемые параметры
+        :return: данные пользователя
+        """
         user = ('first_name', 'last_name')
         seller = ('zip_code', 'city_id', 'street', 'home')
 

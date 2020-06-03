@@ -16,10 +16,12 @@ from services.users import (
 bp = Blueprint('users', __name__)
 
 
-# Регистрация
 class UsersRegisterView(MethodView):
     def post(self, account=None):
-        # Получение данных запроса
+        """
+        Обработчик POST-запроса на регистрацию пользователя.
+        :return:
+        """
         request_json = request.json
 
         with db.connection as con:
@@ -32,11 +34,15 @@ class UsersRegisterView(MethodView):
                 return new_user, 201, {'Content-Type': 'application/json'}
 
 
-# Взаимодействие (просмотр или частичное редактирование)
 class UsersInteractView(MethodView):
-    # Получение пользователя
     @auth_required
     def get(self, user_id, account):
+        """
+        Обработчик GET-запроса на получение данных пользователя.
+        :param user_id: идентификатор пользователя
+        :param account: параметры авторизации
+        :return:
+        """
         with db.connection as con:
             service = UserService(con)
             try:
@@ -45,9 +51,14 @@ class UsersInteractView(MethodView):
                 return '', 404
         return jsonify(dict(user)), 200, {'Content-Type': 'application/json'}
 
-    # Частичное редактирование пользователя
     @auth_required
     def patch(self, user_id, account):
+        """
+        Обработчик PATCH-запроса на частичное редактирование пользователя
+        :param user_id: идентификатор пользователя
+        :param account: параметры авторизации
+        :return:
+        """
         if user_id != account['id']:
             return '', 403
 
