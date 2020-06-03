@@ -18,8 +18,13 @@ class AuthService:
     def __init__(self, connection):
         self.connection = connection
 
-    # Авторизация пользователя
     def login(self, email, password):
+        """
+        Метод авторизации пользователя.
+        :param email: логин (e-mail)
+        :param password: пароль
+        :return: идентификатор пользователя
+        """
         query = (
             'SELECT id, password '
             'FROM account '
@@ -34,8 +39,12 @@ class AuthService:
             raise AuthorizationFailedError(email)
         return account['id']
 
-    # Получение пользователя
     def get_seller(self, account_id):
+        """
+        Метод получения идентификатора продавца по идентификатоу пользователя.
+        :param account_id: идентификатор пользователя
+        :return: идентификатор продавца
+        """
         query = (
             'SELECT id '
             'FROM seller '
@@ -46,4 +55,4 @@ class AuthService:
         seller = cur.fetchone()
         if seller is None:
             raise SellerDoesNotExistError(account_id)
-        return seller['id']         # TODO сформировать корректный response
+        return seller['id']

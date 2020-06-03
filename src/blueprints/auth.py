@@ -13,9 +13,12 @@ from services.auth import (
 bp = Blueprint('auth', __name__)
 
 
-# Авторизация
 @bp.route('/login', methods=['POST'])
 def login():
+    """
+    Обработчик POST-запроса на авторизацию пользователя.
+    :return: response
+    """
     request_json = request.json
     email = request_json.get('email')
     password = request_json.get('password')
@@ -35,12 +38,15 @@ def login():
                 pass
             else:
                 session['seller_id'] = seller_id
-            return '', 200      # TODO response
+            return '', 200
 
 
-# Выход
 @bp.route('/logout', methods=['POST'])
 def logout():
+    """
+    Обработчик POST-запроса на завершение сессии.
+    :return:
+    """
     session.pop('account_id', None)
     session.pop('seller_id', None)
     return '', 200
