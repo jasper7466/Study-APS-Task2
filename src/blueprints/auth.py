@@ -28,7 +28,7 @@ def login():
         try:
             account_id = service.login(email, password)
         except AuthorizationFailedError:
-            return '', 403
+            return '', 401
         else:
             session['account_id'] = account_id
             # Попытка авторизации в роли продавца
