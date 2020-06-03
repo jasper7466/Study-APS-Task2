@@ -22,7 +22,7 @@ class AdPermissionError(AdsServiceError):
     pass
 
 
-class AdUpdateError(AdsServiceError):
+class AdExecuteError(AdsServiceError):
     pass
 
 
@@ -376,10 +376,16 @@ class AdsService:
         self.connection.execute(f'UPDATE ad SET title = "{title}" WHERE id = {ad_id}')
 
     def _delete_tags(self, ad_id):
+        self.connection.execute('PRAGMA foreign_keys = ON')
         self.connection.execute(f'DELETE FROM adtag WHERE ad_id = {ad_id}')
 
     def _delete_colors(self, car_id):
+        self.connection.execute('PRAGMA foreign_keys = ON')
         self.connection.execute(f'DELETE FROM carcolor WHERE car_id = {car_id}')
+
+    def _delete_ad(self, ad_id):
+        self.connection.execute('PRAGMA foreign_keys = ON')
+        self.connection.execute(f'DELETE FROM ad WHERE id = {ad_id}')
 
     def _update_car(self, car_id, car):
         records = ', '.join(f'{key} = "{value}"' for key, value in car.items())
@@ -422,4 +428,19 @@ class AdsService:
                 if images:
                     self._create_images(car_id, images)
         except sqlite.IntegrityError:
-            raise AdUpdateError
+            raise AdExecuteError
+
+    def delete_ad(self, ad_id, seller_id):
+        if not self._is_owner(ad_id, seller_id):
+            raise AdPermissionError
+
+        car_id = self._get_car_id(ad_id)
+
+        try:
+            self._delete_images(car_id)
+            self._delete_colors(car_id)
+            self._delete_tags(ad_id)
+            self._delete_ad(ad_id)
+        except sqlite.IntegrityError:
+            raise AdExecuteError
+

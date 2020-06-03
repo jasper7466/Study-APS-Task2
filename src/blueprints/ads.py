@@ -11,7 +11,7 @@ from services.ads import (
     AdDoesNotExistError,
     AdPublishError,
     AdPermissionError,
-    AdUpdateError
+    AdExecuteError
 )
 from datetime import datetime
 
@@ -94,7 +94,25 @@ class AdView(MethodView):
                 return '', 403
             except AdDoesNotExistError:
                 return '', 404
-            except AdUpdateError:
+            except AdExecuteError:
+                con.rollback()
+                return '', 400
+            else:
+                return '', 200
+
+    @seller_required
+    def delete(self, account, ad_id):
+        seller_id = account['seller_id']
+
+        with db.connection as con:
+            service = AdsService(con)
+            try:
+                service.delete_ad(ad_id, seller_id)
+            except AdPermissionError:
+                return '', 403
+            except AdDoesNotExistError:
+                return '', 404
+            except AdExecuteError:
                 con.rollback()
                 return '', 400
             else:
