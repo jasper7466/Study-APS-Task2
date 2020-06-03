@@ -4,6 +4,10 @@ from database import db
 
 
 def auth_required(view_func):
+    """
+    Декоратор, применяется к функциям/методам для вызова которых
+    требуется авторизация в роли пользователя или продавца.
+    """
     @wraps(view_func)
     def wrapper(*args, **kwargs):
         account_id = session.get('account_id')
@@ -24,6 +28,10 @@ def auth_required(view_func):
 
 
 def seller_required(view_func):
+    """
+    Декоратор, применяется к функциям/методам для вызова которых
+    требуется авторизация в роли продавца.
+    """
     @wraps(view_func)
     def wrapper(*args, **kwargs):
         account_id = session.get('account_id')

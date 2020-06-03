@@ -12,6 +12,10 @@ from fileloader import fl
 
 
 def create_app():
+    """
+    Функция создания риложения
+    :return:
+    """
     app = Flask(__name__)
     app.config.from_object('config.Config')
     app.register_blueprint(auth_bp, url_prefix='/auth')

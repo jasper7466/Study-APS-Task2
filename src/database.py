@@ -2,6 +2,9 @@ import sqlite3 as sqlite
 
 
 class SqliteDB:
+    """
+    Вспомогательный класс для упрощения работы с БД.
+    """
     def __init__(self, app=None):
         self._connection = None
         self._app = None
