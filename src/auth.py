@@ -42,10 +42,13 @@ def seller_required(view_func):
             cur = con.execute(f'''
                 SELECT account.id as account_id, seller.id as seller_id
                 FROM account
-                    JOIN seller ON seller.id = account.id
+                    JOIN seller ON seller.account_id = account.id
                 WHERE account.id = {account_id} AND seller.id = {seller_id}
             ''')
             account = cur.fetchone()
+            print(account_id)
+            print(seller_id)
+            print(account)
         if not account:
             return '', 403
         return view_func(*args, **kwargs, account=dict(account))
