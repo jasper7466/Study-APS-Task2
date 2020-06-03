@@ -46,9 +46,6 @@ def seller_required(view_func):
                 WHERE account.id = {account_id} AND seller.id = {seller_id}
             ''')
             account = cur.fetchone()
-            print(account_id)
-            print(seller_id)
-            print(account)
         if not account:
             return '', 403
         return view_func(*args, **kwargs, account=dict(account))

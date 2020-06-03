@@ -124,8 +124,11 @@ class UserService:
                 for key in seller:
                     try:
                         if data[key] is not None:
-                            self.connection.execute(f'UPDATE seller SET {key} = "{data[key]}" WHERE account_id = {account_id}')
-                            print(data[key])
+                            self.connection.execute(f'''
+                                UPDATE seller
+                                SET {key} = "{data[key]}"
+                                WHERE account_id = {account_id}
+                            ''')
                     except KeyError:
                         pass
 
