@@ -9,7 +9,9 @@ from auth import seller_required
 from services.ads import (
     AdsService,
     AdDoesNotExistError,
-    AdPublishError
+    AdPublishError,
+    AdPermissionError,
+    AdUpdateError
 )
 from datetime import datetime
 
@@ -45,7 +47,9 @@ class AdsView(MethodView):
         # Добавляем в запрос метку времени и id продавца
         request_json.update({'date': int(datetime.now().timestamp())})
         request_json.update({'seller_id': seller_id})
-        # Добавляем в кол-во владельцев (если не задано) TODO
+
+        # TODO переделать, т.к. в БД этого поля задано дефолтное значение
+        # Добавляем в кол-во владельцев (если не задано)
         if not request_json.get('num_owners'):
             request_json.update({'num_owners': 0})
 
@@ -74,6 +78,27 @@ class AdView(MethodView):
                 return '', 404
             else:
                 return jsonify(dict(ad))
+
+    @seller_required
+    def patch(self, account, ad_id):
+        seller_id = account['seller_id']
+        request_json = request.json
+        if not request_json:
+            return '', 400
+
+        with db.connection as con:
+            service = AdsService(con)
+            try:
+                service.edit_ad(ad_id, seller_id, request_json)
+            except AdPermissionError:
+                return '', 403
+            except AdDoesNotExistError:
+                return '', 404
+            except AdUpdateError:
+                con.rollback()
+                return '', 400
+            else:
+                return '', 200
 
 
 bp.add_url_rule('', view_func=AdsView.as_view('ads'))

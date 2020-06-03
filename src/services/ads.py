@@ -18,6 +18,14 @@ class AdPublishError(AdsServiceError):
     pass
 
 
+class AdPermissionError(AdsServiceError):
+    pass
+
+
+class AdUpdateError(AdsServiceError):
+    pass
+
+
 class AdsService:
     def __init__(self, connection):
         self.connection = connection
@@ -130,7 +138,7 @@ class AdsService:
         :param tags: набор тегов
         :return: список объектов "объявление"
         """
-        # Шаблон для получения базовых полей уникальных объявлений, удовлетворяющих условиям
+        # Шаблон для получения уникальных id объявлений, удовлетворяющих условиям
         query_template = '''
             SELECT DISTINCT ad.id
             FROM ad
@@ -257,7 +265,7 @@ class AdsService:
         instance_id = cur.lastrowid
         return instance_id
 
-    def _create_car(self, data):
+    def _create_car(self, car):
         """
         Приватный метод создания записи в таблице "car".
         На вход принимает объект с набором специфических полей,
@@ -265,35 +273,25 @@ class AdsService:
         :param data: объект с аргументами
         :return: instance_id: id записи
         """
-        make = data['make']
-        model = data['model']
-        mileage = data['mileage']
-        num_owners = data['num_owners']
-        reg_number = data['reg_number']
 
+        keys = ', '.join(f'{key}' for key in car.keys())
+        values = ', '.join(f'"{value}"' for value in car.values())
         self.connection.execute('PRAGMA foreign_keys = ON')
-        cur = self.connection.execute(f'''
-            INSERT INTO car (make, model, mileage, num_owners, reg_number)
-            VALUES ("{make}", "{model}", {mileage}, {num_owners}, "{reg_number}")
-        ''')
+        cur = self.connection.execute(f'INSERT INTO car ({keys}) VALUES ({values})')
         instance_id = cur.lastrowid
         return instance_id
 
-    def _create_tags(self, data):
+    def _create_tags(self, ad_id, tags):
         """
         Приватный метод создания записи в таблицах "tag" и "adtag".
-        На вход принимает объект с набором специфических полей,
-        откуда получает необходимые аргументы.
-        :param data: объект с аргументами
+        :param ad_id: идентификатор объявления
+        :param tags: список тегов
         :return: nothing
         """
-        names = data['tags']
-        ad_id = data['ad_id']
-
         self.connection.execute('PRAGMA foreign_keys = ON')
-        for name in names:
-            self.connection.execute(f'INSERT OR IGNORE INTO tag (name) VALUES ("{name}")')
-            cur = self.connection.execute(f'SELECT id FROM tag WHERE name = "{name}"')
+        for tag in tags:
+            self.connection.execute(f'INSERT OR IGNORE INTO tag (name) VALUES ("{tag}")')
+            cur = self.connection.execute(f'SELECT id FROM tag WHERE name = "{tag}"')
             tag_id = dict(cur.fetchone())['id']
             self.connection.execute(f'INSERT INTO adtag (tag_id, ad_id) VALUES ({tag_id}, {ad_id})')
 
@@ -307,31 +305,24 @@ class AdsService:
         instance = cur.fetchone()
         return dict(instance)['id']
 
-    def _append_colors(self, data):
+    def _append_colors(self, car_id, colors):
         """
         Приватный метод создания записи в таблице "carcolor".
-        На вход принимает объект с набором специфических полей,
-        откуда получает необходимые аргументы.
-        :param data: объект с аргументами
+        :param car_id: идентификатор автомобиля
+        :param colors: список идентификаторов цветов
         :return: nothing
         """
-        colors = data['colors']
-        car_id = data['car_id']
         self.connection.execute('PRAGMA foreign_keys = ON')
         for color_id in colors:
             self.connection.execute(f'INSERT INTO carcolor (color_id, car_id) VALUES ({color_id}, {car_id})')
 
-    def _create_images(self, data):
+    def _create_images(self, car_id, images):
         """
         Приватный метод создания записи в таблице "image".
-        На вход принимает объект с набором специфических полей,
-        откуда получает необходимые аргументы.
-        :param data: объект с аргументами
+        :param car_id: идентификатор машины
+        :param images: объект с данными изображений
         :return: nothing
         """
-        images = data['images']
-        car_id = data['car_id']
-
         self.connection.execute('PRAGMA foreign_keys = ON')
         for image in images:
             title = image['title']
@@ -348,22 +339,87 @@ class AdsService:
         :param account_id: id аккаунта
         :return:
         """
-        # Меняем структуру объекта (вытаскиваем "car" на уровень выше) TODO
+
+        car = data.get('car', None)
+        images = car.pop('images', None)
+        colors = car.pop('colors', None)
+        tags = data.get('tags', None)
+
+        # TODO возможно, стоит переделать способ передачи аргументов в методы (не через data)
+        # Меняем структуру объекта (вытаскиваем "car" на уровень выше)
         car = data['car']
         del data['car']
         data = {**data, **car}
 
         # Попытка создать таблицы объявления
         try:
-            car_id = self._create_car(data)
+            car_id = self._create_car(car)
             data.update({'car_id': car_id})
             ad_id = self._create_ad(data)
             data.update({'ad_id': ad_id})
-            self._append_colors(data)
-            self._create_tags(data)
-            self._create_images(data)
+            self._append_colors(car_id, colors)
+            self._create_tags(ad_id, tags)
+            self._create_images(car_id, images)
         except sqlite.IntegrityError:
             raise AdPublishError
         else:
             return self.get_ad(data['ad_id'])
 
+    def _is_owner(self, ad_id, seller_id):
+        ad = self.get_ad(ad_id)
+        if ad['seller_id'] != seller_id:
+            return False
+        else:
+            return True
+
+    def _update_title(self, ad_id, title):
+        self.connection.execute(f'UPDATE ad SET title = "{title}" WHERE id = {ad_id}')
+
+    def _delete_tags(self, ad_id):
+        self.connection.execute(f'DELETE FROM adtag WHERE ad_id = {ad_id}')
+
+    def _delete_colors(self, car_id):
+        self.connection.execute(f'DELETE FROM carcolor WHERE car_id = {car_id}')
+
+    def _update_car(self, car_id, car):
+        records = ', '.join(f'{key} = "{value}"' for key, value in car.items())
+        self.connection.execute(f'UPDATE car SET {records} WHERE id = {car_id}')
+
+    def _get_car_id(self, ad_id):
+        cur = self.connection.execute(f'SELECT car_id AS id FROM ad WHERE ad.id = {ad_id}')
+        instance = cur.fetchone()
+        return instance['id']
+
+    def _delete_images(self, car_id):
+        self.connection.execute(f'DELETE FROM image WHERE car_id = {car_id}')
+
+    def edit_ad(self, ad_id, seller_id, data):
+        if not self._is_owner(ad_id, seller_id):
+            raise AdPermissionError
+
+        title = data.get('title', None)
+        tags = data.get('tags', None)
+        car = data.get('car', None)
+        colors = car.pop('colors', None)
+        images = car.pop('images', None)
+        car_id = self._get_car_id(ad_id)
+
+        try:
+            if title:
+                self._update_title(ad_id, title)
+            if tags is not None:
+                self._delete_tags(ad_id)
+                if tags:
+                    self._create_tags(ad_id, tags)
+            if car:
+                self._update_car(car_id, car)
+            if colors is not None:
+                self._delete_colors(car_id)
+                if colors:
+                    self._append_colors(car_id, colors)
+            if images is not None:
+                self._delete_images(car_id)
+                if images:
+                    self._create_images(car_id, images)
+        except sqlite.IntegrityError:
+            raise AdUpdateError
